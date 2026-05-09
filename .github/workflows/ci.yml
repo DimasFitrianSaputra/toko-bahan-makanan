@@ -1,13 +1,11 @@
 name: CI Software Testing
 
-# Workflow berjalan otomatis saat push [cite: 8, 75]
 on: [push]
 
 jobs:
   laravel-tests:
     runs-on: ubuntu-latest
 
-    # Menyiapkan database MySQL untuk testing [cite: 7, 77]
     services:
       mysql:
         image: mysql:8.0
@@ -29,8 +27,18 @@ jobs:
           extensions: mbstring, dom, fileinfo, mysql
           coverage: none
 
-      - name: Install Dependencies (Compile)
+      - name: Setup Node.js # Tambahan untuk compile assets
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install Backend Dependencies (Compile PHP)
         run: composer install --prefer-dist --no-progress
+
+      - name: Install Frontend & Build Assets (Compile Assets)
+        run: |
+          npm install
+          npm run build
 
       - name: Prepare Laravel Environment
         run: |
@@ -48,7 +56,6 @@ jobs:
           DB_PASSWORD: root
 
       - name: Run All Tests (Unit & Integration)
-        # Menjalankan semua testing sesuai mandat modul [cite: 71, 77]
         run: php artisan test
         env:
           DB_CONNECTION: mysql
