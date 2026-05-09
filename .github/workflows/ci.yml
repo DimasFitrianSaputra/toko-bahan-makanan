@@ -13,16 +13,13 @@ jobs:
     services:
       mysql:
         image: mysql:8.0
-
         env:
           MYSQL_ROOT_PASSWORD: root
           MYSQL_DATABASE: toko_bahan_makanan_test
-
         ports:
           - 3306:3306
-
         options: >-
-          --health-cmd="mysqladmin ping"
+          --health-cmd="mysqladmin ping -proot"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=3
@@ -35,17 +32,18 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: 8.2
+          extensions: mbstring, pdo, pdo_mysql
 
-      - name: Copy ENV
+      - name: Copy .env
         run: cp .env.example .env
 
-      - name: Install Composer
+      - name: Install Dependencies
         run: composer install --no-interaction --prefer-dist
 
       - name: Generate App Key
         run: php artisan key:generate
 
-      - name: Set Database Config
+      - name: Configure Database
         run: |
           sed -i 's/DB_CONNECTION=.*/DB_CONNECTION=mysql/' .env
           sed -i 's/DB_HOST=.*/DB_HOST=127.0.0.1/' .env
