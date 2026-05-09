@@ -1,12 +1,13 @@
 name: CI Software Testing
 
+# Workflow berjalan otomatis saat push [cite: 8, 75]
 on: [push]
 
 jobs:
   laravel-tests:
     runs-on: ubuntu-latest
 
-    # Menyalakan database MySQL di GitHub Actions
+    # Menyiapkan database MySQL untuk testing [cite: 7, 77]
     services:
       mysql:
         image: mysql:8.0
@@ -18,7 +19,8 @@ jobs:
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Kode
+        uses: actions/checkout@v4
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -27,21 +29,31 @@ jobs:
           extensions: mbstring, dom, fileinfo, mysql
           coverage: none
 
-      - name: Install Dependencies
+      - name: Install Dependencies (Compile)
         run: composer install --prefer-dist --no-progress
 
       - name: Prepare Laravel Environment
         run: |
-          cp .env.example .env.testing
+          cp .env.example .env
           php artisan key:generate
 
-      - name: Run Testing
+      - name: Run Migrations
+        run: php artisan migrate --force
         env:
-          # Pastikan env ini sama dengan yang diatur di bagian 'services' di atas
           DB_CONNECTION: mysql
           DB_HOST: 127.0.0.1
           DB_PORT: 3306
           DB_DATABASE: toko_bahan_makanan_test
           DB_USERNAME: root
           DB_PASSWORD: root
+
+      - name: Run All Tests (Unit & Integration)
+        # Menjalankan semua testing sesuai mandat modul [cite: 71, 77]
         run: php artisan test
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: toko_bahan_makanan_test
+          DB_USERNAME: root
+          DB_PASSWORD: root
