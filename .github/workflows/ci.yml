@@ -1,15 +1,12 @@
-name: Laravel CI
+name: CI Software Testing
 
-on:
-  push:
-    branches:
-      - main
+on: [push]
 
 jobs:
   laravel-tests:
-
     runs-on: ubuntu-latest
 
+    # Menyalakan database MySQL di GitHub Actions
     services:
       mysql:
         image: mysql:8.0
@@ -18,47 +15,33 @@ jobs:
           MYSQL_DATABASE: toko_bahan_makanan_test
         ports:
           - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping -proot"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=3
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: 8.2
-
-      - name: Copy .env
-        run: cp .env.example .env
+          php-version: '8.2'
+          extensions: mbstring, dom, fileinfo, mysql
+          coverage: none
 
       - name: Install Dependencies
-        run: composer install --no-interaction --prefer-dist
+        run: composer install --prefer-dist --no-progress
 
-      - name: Generate App Key
-        run: php artisan key:generate
-
-      - name: Set Permissions
-        run: chmod -R 777 storage bootstrap/cache
-
-      - name: Configure Database
+      - name: Prepare Laravel Environment
         run: |
-          sed -i 's/DB_CONNECTION=.*/DB_CONNECTION=mysql/' .env
-          sed -i 's/DB_HOST=.*/DB_HOST=127.0.0.1/' .env
-          sed -i 's/DB_PORT=.*/DB_PORT=3306/' .env
-          sed -i 's/DB_DATABASE=.*/DB_DATABASE=toko_bahan_makanan_test/' .env
-          sed -i 's/DB_USERNAME=.*/DB_USERNAME=root/' .env
-          sed -i 's/DB_PASSWORD=.*/DB_PASSWORD=root/' .env
+          cp .env.example .env.testing
+          php artisan key:generate
 
-      - name: Wait for MySQL
-        run: sleep 15
-
-      - name: Run Migration
-        run: php artisan migrate
-
-      - name: Run Tests
+      - name: Run Testing
+        env:
+          # Pastikan env ini sama dengan yang diatur di bagian 'services' di atas
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: toko_bahan_makanan_test
+          DB_USERNAME: root
+          DB_PASSWORD: root
         run: php artisan test
